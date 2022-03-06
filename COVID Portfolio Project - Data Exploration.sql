@@ -1,3 +1,7 @@
+/*
+Covid 19 Data Exploration 
+Skills used: Joins, CTE's, Temp Tables, Aggregate Functions, Creating Views, Converting Data Types
+*/
 
 SELECT *
 FROM PorfolioProject..CovidDeaths
@@ -17,8 +21,8 @@ WHERE continent is not null
 ORDER BY 1,2
 
 
--- Looking at total cases vs total deaths
--- Showing likelihood of dying if you contract covid in your country
+-- Total Cases vs Total Deaths
+-- Shows likelihood of dying if you contract covid in your country
 
 SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as DeathPercentage
 FROM PorfolioProject..CovidDeaths
@@ -27,7 +31,8 @@ and continent is not null
 ORDER BY 1,2
 
 
--- Looking at Total cases vs population
+-- Total Cases vs Population
+-- Shows what percentage of population infected with Covid
 
 SELECT location, date, total_cases, population, (total_cases/population)*100 as PercentPopulationInfected
 FROM PorfolioProject..CovidDeaths
@@ -35,12 +40,11 @@ Where location like 'vietnam'
 ORDER BY 1,2
 
 
--- Looking at countries with highest infection rate compared to Population
+-- Countries with Highest Infection Rate compared to Population
 
 SELECT location, MAX(total_cases) as HighestInfectionCount, population, MAX( (total_cases/population) )*100 as PercentPopulationInfected
 FROM PorfolioProject..CovidDeaths
 --Where location like 'vietnam'
-WHERE continent is not null
 GROUP BY location, population
 ORDER BY PercentPopulationInfected desc
 
@@ -57,7 +61,7 @@ GROUP BY continent
 ORDER BY TotalDeathCount desc 
 
 
--- Global numbers
+-- GLOBAL NUMBERS
 
 SELECT   Sum(new_cases) as Total_cases, Sum(cast(new_deaths as int)) as Total_deaths , Sum(cast(new_deaths as int))/SUM(new_cases)*100 as DeathPercent
 FROM PorfolioProject..CovidDeaths
@@ -67,8 +71,8 @@ WHERE continent is not null
 ORDER BY 1,2
 
 
---LOOKING AT TOTAL POPULATION VS VACCINATIONS
--- Hien so luong nguoi duoc tiem tung ngay, tung noi (cong don qua tung ngay)
+-- Total Population vs Vaccinations
+-- Shows Percentage of Population that has recieved at least one Covid Vaccine
 
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CONVERT(int,vac.new_vaccinations)) 
@@ -82,8 +86,7 @@ WHERE dea.continent is not null
 ORDER BY 2,3
 
 
--- Use CTE 
--- if I use  SUM(convert(int,vac.new_vaccinations) will lead to arithmetic overflow => solution: replace int = bigint
+-- Using CTE to perform Calculation on Partition By in previous query
 
 With PopvsVac (continent, Location, Date, Population, new_vaccination, RollingPeopleVaccinated)
 as
@@ -99,15 +102,13 @@ JOIN PorfolioProject..CovidVaccinations vac
 WHERE dea.continent is not null
 --Order by 2,3
 )
-
 Select *, (RollingPeopleVaccinated/population)*100
 FROM PopvsVac
 
 
--- USE TEMP TABLE
+-- Using Temp Table to perform Calculation on Partition By in previous query
 
-
--- DROP Table if exists #PercentPopulationVaccinated
+DROP Table if exists #PercentPopulationVaccinated
 CREATE TABLE #PercentPopulationVaccinated
 (
 Continent nvarchar(255),
@@ -134,9 +135,9 @@ SELECT *,  (RollingPeopleVaccinated/population)*100
 FROM #PercentPopulationVaccinated
 
 
--- CREATE VIEW to store data for visualization
+-- Creating View to store data for later visualizations
 
---DROP View if exists PercentPopulationVaccinated
+DROP View if exists PercentPopulationVaccinated
 CREATE VIEW PercentPopulationVaccinated as
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CONVERT(bigint,vac.new_vaccinations)) 
@@ -146,7 +147,5 @@ JOIN PorfolioProject..CovidVaccinations vac
 	ON dea.location = vac.location
 	AND dea.date = vac.date
 WHERE dea.continent is not null
---Order by 2,3
 
-SELECT *
-FROM PercentPopulationVaccinated
+
